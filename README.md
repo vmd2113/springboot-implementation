@@ -35,4 +35,8 @@ Technologies Used:
 - JWT (JSON Web Tokens)
 - MySQL Database (optional, can change to any other database)
 - Maven for dependency management
+<<<<<<< HEAD
 - Conclusion: This project serves as a comprehensive guide for implementing secure authentication in Spring Boot applications using JWT. It showcases how to protect RESTful APIs effectively and provides a solid foundation for building secure web applications.
+=======
+
+>>>>>>> 27bd0b6e9bd52628be31fd3a70b2686bcfda783f
