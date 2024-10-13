@@ -8,17 +8,17 @@ import com.duongw.sbsecurity.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 
 public class UserService implements IUserService {
     private final UserRepository userRepository;
-
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public User getUserById(Long id) {
@@ -52,6 +52,14 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public User changePassword(String email,
+                               String password) {
+        User user = getUserByEmail(email);
+        user.setPassword(passwordEncoder.encode(password));
+        return userRepository.save(user);
+    }
+
+    @Override
     public List<User> getAllUser() {
         List<User> userList = userRepository.findAll();
         return userList;
@@ -65,15 +73,22 @@ public class UserService implements IUserService {
     }
 
     @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    @Override
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
 
-    // implement UserServiceDetail
     @Override
-    public UserDetailsService userDetailsService() {
-        return username -> userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    public boolean existedByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
+
+    // implement UserServiceDetail -> spring security
+
 
     @Override
     public List<Role> findAllRolesByUserId(Long userId) {

@@ -24,6 +24,9 @@ public class Token {
     @Column(name = "refresh_token")
     private String refreshToken;
 
+    @Column(name = "reset_password_token")
+    private String resetPasswordToken;
+
     @Column(name = "is_logout")
     private boolean isLogout;
 
@@ -31,9 +34,10 @@ public class Token {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Token(String accessToken, String refreshToken, boolean isLogout, User user) {
+    public Token(String accessToken, String refreshToken,String resetPasswordToken, boolean isLogout, User user) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
+        this.resetPasswordToken = resetPasswordToken;
         this.isLogout = isLogout;
         this.user = user;
     }

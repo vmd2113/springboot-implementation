@@ -1,17 +1,20 @@
 package com.duongw.sbsecurity.controller;
 
-import com.duongw.sbsecurity.DTO.request.LoginRequest;
-import com.duongw.sbsecurity.DTO.request.RegisterRequest;
+import com.duongw.sbsecurity.DTO.request.user.LoginRequest;
+import com.duongw.sbsecurity.DTO.request.user.RegisterRequest;
+import com.duongw.sbsecurity.DTO.request.user.ResetPasswordDTO;
 import com.duongw.sbsecurity.DTO.response.ApiResponse;
 import com.duongw.sbsecurity.DTO.response.TokenResponse;
 import com.duongw.sbsecurity.service.IUserService;
 import com.duongw.sbsecurity.security.AuthenticationService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -56,8 +59,12 @@ public class AuthenticationController {
     }
 
     @PostMapping("/access-token")
-    public ResponseEntity<ApiResponse<TokenResponse>> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest loginRequest, BindingResult bindingResult) {
         try {
+            if (bindingResult.hasErrors()) {
+                ApiResponse<TokenResponse> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Login failed: " + bindingResult.getFieldError().getDefaultMessage());
+                return ResponseEntity.badRequest().body(apiResponse);
+            }
             TokenResponse tokenResponse = authenticationService.authenticateLogin(loginRequest);
             ApiResponse<TokenResponse> apiResponse = new ApiResponse<>(HttpStatus.OK, "Login successful", tokenResponse);
             return ResponseEntity.ok(apiResponse);
@@ -68,24 +75,34 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<TokenResponse>> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<ApiResponse<TokenResponse>> register(@Valid @RequestBody RegisterRequest registerRequest, BindingResult bindingResult) {
         log.info("---------- register ----------");
         try {
-            TokenResponse tokenResponse = authenticationService.register(registerRequest);
-            ApiResponse<TokenResponse> apiResponse = new ApiResponse<>(HttpStatus.CREATED, "Registration successful", tokenResponse);
-            return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+            if (bindingResult.hasErrors()) {
+                ApiResponse<TokenResponse> apiResponse = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR, "Registration failed: " + bindingResult.getFieldError().getDefaultMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+            } else {
+                TokenResponse tokenResponse = authenticationService.register(registerRequest);
+                ApiResponse<TokenResponse> apiResponse = new ApiResponse<>(HttpStatus.CREATED, "Registration successful", tokenResponse);
+                return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+
+            }
+
         } catch (Exception e) {
             ApiResponse<TokenResponse> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Registration failed: " + e.getMessage());
             return ResponseEntity.badRequest().body(apiResponse);
         }
     }
 
-    @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody String username, @RequestBody String password) {
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@Valid @RequestBody String email, BindingResult bindingResult) {
         try {
-            // Call your reset password logic here
-            String result = "Password reset successful"; // Placeholder
-            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result, null);
+            if (bindingResult.hasErrors()) {
+                ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Password reset failed: " + bindingResult.getFieldError().getDefaultMessage());
+                return ResponseEntity.badRequest().body(apiResponse);
+            }
+            String result = authenticationService.forgetPassword(email);
+            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result);
             return ResponseEntity.ok(apiResponse);
         } catch (Exception e) {
             ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Password reset failed: " + e.getMessage());
@@ -93,14 +110,15 @@ public class AuthenticationController {
         }
     }
 
-    //TODO: updating feature
-
     @PostMapping("/change-password")
-    public ResponseEntity<ApiResponse<String>> changePassword(@RequestBody String username, @RequestBody String password) {
+    public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ResetPasswordDTO request, BindingResult bindingResult) {
         try {
-            // Call your change password logic here
-            String result = "Password change successful"; // Placeholder
-            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result, null);
+            if (bindingResult.hasErrors()) {
+                ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Password change failed: " + bindingResult.getFieldError().getDefaultMessage());
+                return ResponseEntity.badRequest().body(apiResponse);
+            }
+            String result = authenticationService.changePassword(request);
+            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result);
             return ResponseEntity.ok(apiResponse);
         } catch (Exception e) {
             ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Password change failed: " + e.getMessage());
@@ -108,6 +126,21 @@ public class AuthenticationController {
         }
     }
 
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestBody String secretKey) {
+        try {
+            String result = authenticationService.resetPassword(secretKey);
+            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result);
+            return ResponseEntity.ok(apiResponse);
+        } catch (Exception e) {
+            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Password change failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(apiResponse);
+        }
+    }
+
+
+    //TODO: implement confirm email when register
     @PostMapping("/confirm-email")
     public ResponseEntity<ApiResponse<String>> confirmEmail(@RequestBody String username, @RequestBody String password) {
         try {
@@ -121,18 +154,8 @@ public class AuthenticationController {
         }
     }
 
-    @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestBody String username, @RequestBody String password) {
-        try {
-            // Call your forgot password logic here
-            String result = "Forgot password request successful"; // Placeholder
-            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result, null);
-            return ResponseEntity.ok(apiResponse);
-        } catch (Exception e) {
-            ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.BAD_REQUEST, "Forgot password request failed: " + e.getMessage());
-            return ResponseEntity.badRequest().body(apiResponse);
-        }
-    }
+    //TODO: implement verify when change email
+
 
     @PostMapping("/verify-email")
     public ResponseEntity<ApiResponse<String>> verifyEmail(@RequestBody String username, @RequestBody String password) {
@@ -146,6 +169,8 @@ public class AuthenticationController {
             return ResponseEntity.badRequest().body(apiResponse);
         }
     }
+
+    //TODO: implement resend email when key expired
 
     @PostMapping("/resend-email")
     public ResponseEntity<ApiResponse<String>> resendEmail(@RequestBody String username, @RequestBody String password) {

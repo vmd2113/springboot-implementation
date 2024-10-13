@@ -8,9 +8,13 @@ import java.util.Map;
 
 public interface JwtService {
 
+
+
     String generateToken( UserDetails userDetails);
 
     String generateRefreshToken(UserDetails user);
+
+    String generateResetPasswordToken(UserDetails user);
 
     String extractUsername(String token, TokenTypes type);
 

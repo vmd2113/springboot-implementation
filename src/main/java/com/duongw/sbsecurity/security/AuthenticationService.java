@@ -1,7 +1,8 @@
 package com.duongw.sbsecurity.security;
 
-import com.duongw.sbsecurity.DTO.request.LoginRequest;
-import com.duongw.sbsecurity.DTO.request.RegisterRequest;
+import com.duongw.sbsecurity.DTO.request.user.LoginRequest;
+import com.duongw.sbsecurity.DTO.request.user.RegisterRequest;
+import com.duongw.sbsecurity.DTO.request.user.ResetPasswordDTO;
 import com.duongw.sbsecurity.DTO.response.TokenResponse;
 import com.duongw.sbsecurity.entity.Role;
 import com.duongw.sbsecurity.entity.Token;
@@ -11,8 +12,10 @@ import com.duongw.sbsecurity.exception.InvalidDataException;
 import com.duongw.sbsecurity.repository.RoleRepository;
 import com.duongw.sbsecurity.repository.UserRepository;
 import com.duongw.sbsecurity.security.token.TokenService;
+import com.duongw.sbsecurity.service.IUserService;
 import com.duongw.sbsecurity.service.impl.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -39,7 +42,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
-    private final UserService userService;
+    private final IUserService userService;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
@@ -136,6 +139,7 @@ public class AuthenticationService {
 
     /**
      * Register user
+     *
      * @param request
      * @return
      */
@@ -143,42 +147,48 @@ public class AuthenticationService {
         log.info("---------- register ----------");
 
         boolean exitedUser = userService.existsByUsername(request.getUsername());
+        boolean exitedEmail = userService.existedByEmail(request.getEmail());
 
         if (exitedUser) {
             log.warn("Attempt to register existing user: {}", request.getUsername());
-            return new TokenResponse(null, null, null, "User already exist");
+            throw new AlreadyExistedException("User with username: " + request.getUsername() + "already existing");
+        }
+
+        if (exitedEmail) {
+            log.warn("Attempt to register existing user: {}", request.getUsername());
+            throw new AlreadyExistedException("User with email: " + request.getEmail() + "already existing");
         }
         User user = new User();
 
         if (StringUtils.isBlank(request.getUsername())) {
             log.error("Username must be not blank");
-            return new TokenResponse(null, null, null, "Username must be not blank");
+            throw new InvalidDataException("Username must be not blank");
         }
         if (StringUtils.isBlank(request.getPassword())) {
             log.error("Password must be not blank");
-            return new TokenResponse(null, null, null, "Password must be not blank");
+            throw new InvalidDataException("Password must be not blank");
         }
 
-        if (request.getPassword().equals(request.getConfirmPassword())) {
-            user.setUsername(request.getUsername());
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-            HashSet<Role> roles = new HashSet<>();
-            roles.add(roleRepository.findByName("ROLE_CUSTOMER"));
-            user.setRoles(roles);
-
-            user = userRepository.save(user);
-            log.info("User {} registered successfully", user.getUsername());
-
-            String accessToken = jwtService.generateToken(user);
-            String refreshToken = jwtService.generateRefreshToken(user);
-            saveUserToken(accessToken, refreshToken, user);
-
-            log.info("Tokens generated for user {}", user.getUsername());
-            return new TokenResponse(accessToken, refreshToken, user.getId(), "Register success");
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            log.error("Password mismatch for user {}", request.getUsername());
+            throw new InvalidDataException("Password not match");
         }
+        user.setEmail(request.getEmail());
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        HashSet<Role> roles = new HashSet<>();
+        roles.add(roleRepository.findByName("ROLE_CUSTOMER"));
+        user.setRoles(roles);
 
-        log.error("Password mismatch for user {}", request.getUsername());
-        return new TokenResponse(null, null, null, "Password not match");
+        user = userRepository.save(user);
+        log.info("User {} registered successfully", user.getUsername());
+
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        saveUserToken(accessToken, refreshToken, user);
+
+        log.info("Tokens generated for user {}", user.getUsername());
+        return new TokenResponse(accessToken, refreshToken, user.getId(), "Register success");
     }
 
     private void saveUserToken(String accessToken, String refreshToken, User user) {
@@ -214,5 +224,74 @@ public class AuthenticationService {
         }
 
         return "Deleted!";
+    }
+
+    public String forgetPassword(String email) {
+        log.info("---------- forgetPassword ----------");
+        boolean checkEmail = userService.existedByEmail(email);
+        if (!checkEmail) {
+            log.error("Email not exist");
+            throw new InvalidDataException("Email not exist");
+        }
+        // check email exists or notZz
+        User user = userService.getUserByEmail(email);
+
+
+        // generate reset token
+        String resetToken = jwtService.generateResetPasswordToken(user);
+
+        // save to db
+        tokenService.saveToken(Token.builder().username(user.getUsername()).resetPasswordToken(resetToken).build());
+
+        // TODO send email to user
+        String confirmLink = String.format("curl --location 'http://localhost:80/auth/reset-password' \\\n" +
+                "--header 'accept: */*' \\\n" +
+                "--header 'Content-Type: application/json' \\\n" +
+                "--data '%s'", resetToken);
+        log.info("--> confirmLink: {}", confirmLink);
+
+        return resetToken;
+
+    }
+
+    public String resetPassword(String secretKey) {
+        log.info("---------- resetPassword ----------");
+
+        // validate token
+        var user = validateToken(secretKey);
+
+        // check token by username
+        tokenService.getByUsername(user.getUsername());
+
+        return "Reset";
+    }
+
+    public String changePassword(ResetPasswordDTO request) {
+        log.info("---------- changePassword ----------");
+
+        if (!request.getPassword().equals(request.getConfirmPassword())) {
+            throw new InvalidDataException("Passwords do not match");
+        }
+        // get user by reset token
+        var user = validateToken(request.getSecretKey());
+
+        // update password
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userService.changePassword(user.getEmail(), request.getPassword());
+
+        return "Changed";
+    }
+
+    private User validateToken(String token) {
+        // validate token
+        var userName = jwtService.extractUsername(token, RESET_PASSWORD_TOKEN);
+
+        // validate user is active or not
+        var user = userService.getUserByUsername(userName);
+        if (!user.isEnabled()) {
+            throw new InvalidDataException("User not active");
+        }
+
+        return user;
     }
 }

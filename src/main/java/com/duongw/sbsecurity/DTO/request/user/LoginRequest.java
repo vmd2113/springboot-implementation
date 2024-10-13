@@ -1,4 +1,4 @@
-package com.duongw.sbsecurity.DTO.request;
+package com.duongw.sbsecurity.DTO.request.user;
 
 import lombok.Data;
 
