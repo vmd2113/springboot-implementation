@@ -27,7 +27,7 @@ public class JwtServiceImpl implements JwtService {
     @Value("${jwt.refreshKey}")
     String refreshKey;
 
-    @Value("${jwt.resetPassword}")
+    @Value("${jwt.resetPasword}")
     String resetPasswordKey;
 
     @Value("${jwt.access-token-expiration}")

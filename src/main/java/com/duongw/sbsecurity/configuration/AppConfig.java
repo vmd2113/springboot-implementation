@@ -1,10 +1,12 @@
 package com.duongw.sbsecurity.configuration;
 
 import com.duongw.sbsecurity.service.IUserService;
+import com.duongw.sbsecurity.service.impl.UserDetailServiceImpl;
 import io.micrometer.common.lang.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,12 +24,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 
 @Configuration
-@RequiredArgsConstructor
+
 
 public class AppConfig {
 
-    private final IUserService userService;
-    private final FilterSecurity filterSecurity;
+    private UserDetailServiceImpl userService;
+    private  FilterSecurity filterSecurity;
+
+    public AppConfig( UserDetailServiceImpl userService, FilterSecurity filterSecurity) {
+        this.userService = userService;
+        this.filterSecurity = filterSecurity;
+    }
+
+
 
     private final  String[] WHITE_LIST = {"/auth/**"};
 
@@ -72,7 +81,7 @@ public class AppConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userService.userDetailsService());
+        provider.setUserDetailsService(username -> userService.loadUserByUsername(username));
         provider.setPasswordEncoder(getPasswordEncoder());
         return provider;
 

@@ -11,16 +11,27 @@ public interface IUserService {
 
     User getUserById(Long id);
     User getUserByUsername(String username);
+
+
     User updateUser(User user);
 
     User saveUser(User user);
+
+    User changePassword(String email,
+
+                        String password);
+
     List<User> getAllUser();
     void deleteUser(Long id);
+
+    User getUserByEmail(String email);
+
     boolean existsByUsername(String username);
+    boolean existedByEmail(String  email);
 
     // implement UserDetailService of core spring security
 
-    UserDetailsService userDetailsService();
+
 
     List<Role> findAllRolesByUserId(Long userId);
 
