@@ -62,4 +62,19 @@ public class UserController {
         }
     }
 
+
+
+    @DeleteMapping(path = "/{id}")
+    public ResponseEntity<ApiResponse<?>> deleteUser(@PathVariable(name = "id") Long id) {
+        log.info("---------- getUserByUsername ----------");
+        try {
+            userService.deleteUser(id);
+            return new ResponseEntity<>(new ApiResponse<>(HttpStatus.OK, "Delete user success"), HttpStatus.OK);
+        }catch(ResourceNotFoundException e) {
+            return new ResponseEntity<>(new ApiResponse<>(HttpStatus.NOT_FOUND, "Get user by username failed", null), HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(new ApiResponse<>(HttpStatus.BAD_REQUEST, "Get user by username failed", null), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

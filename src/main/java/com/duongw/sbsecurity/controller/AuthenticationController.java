@@ -16,10 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -141,11 +138,11 @@ public class AuthenticationController {
 
 
     //TODO: implement confirm email when register
-    @PostMapping("/confirm-email")
-    public ResponseEntity<ApiResponse<String>> confirmEmail(@RequestBody String username, @RequestBody String password) {
+    @GetMapping("/confirm-email")
+    public ResponseEntity<ApiResponse<String>> confirmEmail(@RequestParam("code") String code) {
         try {
-            // Call your confirm email logic here
-            String result = "Email confirmation successful"; // Placeholder
+
+            String result = userService.confirmEmail(code);
             ApiResponse<String> apiResponse = new ApiResponse<>(HttpStatus.OK, result);
             return ResponseEntity.ok(apiResponse);
         } catch (Exception e) {

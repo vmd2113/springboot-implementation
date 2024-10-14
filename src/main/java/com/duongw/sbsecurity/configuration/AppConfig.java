@@ -40,8 +40,6 @@ public class AppConfig {
         this.filterSecurity = filterSecurity;
     }
 
-
-
     private final  String[] WHITE_LIST = {"/auth/**"};
 
     @Bean
@@ -50,7 +48,7 @@ public class AppConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("**")
-                        .allowedOrigins("http://localhost:8500")
+                        .allowedOrigins("http://localhost:8080", "http://localhost:3000")
                         .allowedMethods("GET", "POST", "PUT", "DELETE") // Allowed HTTP methods
                         .allowedHeaders("*") // Allowed request headers
                         .allowCredentials(false)

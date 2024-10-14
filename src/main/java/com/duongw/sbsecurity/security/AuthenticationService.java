@@ -11,9 +11,11 @@ import com.duongw.sbsecurity.exception.AlreadyExistedException;
 import com.duongw.sbsecurity.exception.InvalidDataException;
 import com.duongw.sbsecurity.repository.RoleRepository;
 import com.duongw.sbsecurity.repository.UserRepository;
+import com.duongw.sbsecurity.security.mail.MailService;
 import com.duongw.sbsecurity.security.token.TokenService;
 import com.duongw.sbsecurity.service.IUserService;
 import com.duongw.sbsecurity.service.impl.UserService;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.List;
 
@@ -46,6 +49,7 @@ public class AuthenticationService {
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final MailService mailService;
 
     // authenticate user login
     public TokenResponse authenticateLogin(LoginRequest loginRequest) {
@@ -90,7 +94,10 @@ public class AuthenticationService {
                 .user(user)
                 .build());
 
+
+
         log.info("Tokens saved to database for user {}", user.getUsername());
+
 
         return TokenResponse.builder()
                 .accessToken(accessToken)
@@ -187,7 +194,14 @@ public class AuthenticationService {
         String refreshToken = jwtService.generateRefreshToken(user);
         saveUserToken(accessToken, refreshToken, user);
 
+
+        try {
+            mailService.sendConfirmLink(user.getEmail(), refreshToken);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
         log.info("Tokens generated for user {}", user.getUsername());
+        log.info("Sending confirming link to user, email={}", user.getEmail());
         return new TokenResponse(accessToken, refreshToken, user.getId(), "Register success");
     }
 

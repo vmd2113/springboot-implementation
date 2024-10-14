@@ -21,6 +21,8 @@ public interface IUserService {
 
                         String password);
 
+    String confirmEmail(String code);
+
     List<User> getAllUser();
     void deleteUser(Long id);
 
