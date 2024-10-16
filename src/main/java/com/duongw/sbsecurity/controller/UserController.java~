@@ -22,7 +22,7 @@ public class UserController {
     private final IUserService userService;
 
     // ADMIN có thể xem tất cả người dùng
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN')")
     @GetMapping(path = "/all")
     public ResponseEntity<ApiResponse<?>> getAllUsers() {
         log.info("---------- getAllUsers ----------");
@@ -35,7 +35,7 @@ public class UserController {
     }
 
     // ADMIN và chính người dùng có thể xem thông tin chi tiết theo ID
-    @PreAuthorize("hasRole('ROLE_ADMIN') or #id == principal.id")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN') or #id == principal.id")
     @GetMapping(path = "/by-id/{id}")
     public ResponseEntity<ApiResponse<?>> getUserById(@PathVariable(name = "id") Long id) {
         log.info("---------- getUserById ----------");
@@ -50,7 +50,7 @@ public class UserController {
     }
 
     // ADMIN và chính người dùng có thể xem thông tin theo username
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_STAFF')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN') or hasAnyAuthority('ROLE_STAFF')")
     @GetMapping(path = "/by-username/{username}")
     public ResponseEntity<ApiResponse<?>> getUserByUsername(@PathVariable(value = "username") String username) {
         log.info("---------- getUserByUsername ----------");
@@ -64,7 +64,7 @@ public class UserController {
         }
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_STAFF')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAnyAuthority('ROLE_STAFF')")
     @GetMapping(path = "/by-email/{email}")
     public ResponseEntity<ApiResponse<?>> getUserByEmail(@PathVariable(value = "email") String email) {
         log.info("---------- getUserByEmail ----------");
@@ -79,7 +79,7 @@ public class UserController {
     }
 
     // Chỉ ADMIN có quyền xóa người dùng
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping(path = "/{id}")
     public ResponseEntity<ApiResponse<?>> deleteUser(@PathVariable(name = "id") Long id) {
         log.info("---------- deleteUser ----------");

@@ -21,8 +21,8 @@ public class ProductController {
     private final IProductService productService;
 
     // ADMIN và STAFF có thể tạo mới sản phẩm
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_STAFF')")
-    @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_STAFF')")
+    @PostMapping("/add-product")
     public ResponseEntity<ApiResponse<?>> createProduct(@RequestBody Product product) {
         log.info("---------- createProduct ----------");
         try {
@@ -34,7 +34,7 @@ public class ProductController {
     }
 
     // ADMIN và STAFF có thể cập nhật sản phẩm
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_STAFF')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('ROLE_STAFF')")
     @PutMapping(path = "/{id}")
     public ResponseEntity<ApiResponse<?>> updateProduct(@PathVariable(name = "id") Long id, @RequestBody Product product) {
         log.info("---------- updateProduct ----------");
@@ -47,7 +47,7 @@ public class ProductController {
     }
 
     // Chỉ ADMIN có quyền xóa sản phẩm
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @DeleteMapping(path = "/{id}")
     public ResponseEntity<ApiResponse<?>> deleteProduct(@PathVariable(name = "id") Long id) {
         log.info("---------- deleteProduct ----------");
@@ -60,7 +60,7 @@ public class ProductController {
     }
 
     // CUSTOMER có thể xem thông tin chi tiết sản phẩm
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_STAFF', 'ROLE_CUSTOMER')")
     @GetMapping(path = "/{id}")
     public ResponseEntity<ApiResponse<?>> getProductById(@PathVariable(name = "id") Long id) {
         log.info("---------- getProductById ----------");
@@ -73,7 +73,7 @@ public class ProductController {
     }
 
     // CUSTOMER có thể xem tất cả các sản phẩm
-    @PreAuthorize("hasRole('ROLE_CUSTOMER')")
+    @PreAuthorize("hasAuthority('ROLE_CUSTOMER')")
     @GetMapping(path = "/all")
     public ResponseEntity<ApiResponse<?>> getAllProducts() {
         log.info("---------- getAllProducts ----------");

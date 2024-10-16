@@ -49,7 +49,7 @@ public class FilterSecurity extends OncePerRequestFilter {
 
         final String userName = jwtService.extractUsername(token, TokenTypes.ACCESS_TOKEN);
         log.info("User name: {}", userName);
-
+        
         if (StringUtils.isNotEmpty(userName) && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = userDetailService.loadUserByUsername(userName);
             if (jwtService.isValid(token, TokenTypes.ACCESS_TOKEN, userDetails)) {

@@ -78,19 +78,20 @@ public class AppConfig {
                         .requestMatchers(WHITE_LIST).permitAll()
 
                         // Chỉ ADMIN có thể quản lý users (thêm, sửa, xóa)
-                        .requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/users/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET).hasAnyAuthority("ROLE_STAFF")
 
                         // ADMIN và STAFF có thể thêm và sửa product, nhưng chỉ ADMIN có thể xóa
-                        .requestMatchers(HttpMethod.POST, "/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF")
-                        .requestMatchers(HttpMethod.PUT, "/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF")
-                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyAuthority("ROLE_ADMIN")
 
                         // CUSTOMER chỉ có thể xem sản phẩm
-                        .requestMatchers(HttpMethod.GET, "/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF", "ROLE_CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF", "ROLE_CUSTOMER")
 
                         // Tất cả các yêu cầu khác cần được xác thực
-                        .anyRequest().authenticated()
+
+
                 )
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
