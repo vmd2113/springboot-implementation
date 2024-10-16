@@ -79,7 +79,7 @@ public class UserController {
     }
 
     // Chỉ ADMIN có quyền xóa người dùng
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping(path = "/{id}")
     public ResponseEntity<ApiResponse<?>> deleteUser(@PathVariable(name = "id") Long id) {
         log.info("---------- deleteUser ----------");

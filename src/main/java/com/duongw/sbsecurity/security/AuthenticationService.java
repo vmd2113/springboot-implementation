@@ -205,13 +205,15 @@ public class AuthenticationService {
         return new TokenResponse(accessToken, refreshToken, user.getId(), "Register success");
     }
 
-    private void saveUserToken(String accessToken, String refreshToken, User user) {
+    public void saveUserToken(String accessToken, String refreshToken, User user) {
         Token token = new Token();
         token.setAccessToken(accessToken);
         token.setRefreshToken(refreshToken);
+        token.setResetPasswordToken(null);
         token.setLogout(false);
         token.setUser(user);
         token.setUsername(user.getUsername());
+
         tokenService.saveToken(token);
         log.info("Token saved for user {}", user.getUsername());
     }

@@ -67,6 +67,6 @@ public class ProductService implements IProductService {
 
     @Override
     public List<Product> findByPriceBetween(Double minPrice, Double maxPrice) {
-        return productRepository.findByPriceBetween(minPrice, maxPrice);
+        return null;
     }
 }

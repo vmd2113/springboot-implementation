@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.HttpMethod;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -72,13 +73,33 @@ public class AppConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers(WHITE_LIST).permitAll().anyRequest().authenticated())
+                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
+                        // Cho phép các endpoint trong danh sách trắng
+                        .requestMatchers(WHITE_LIST).permitAll()
+
+                        // Chỉ ADMIN có thể quản lý users (thêm, sửa, xóa)
+                        .requestMatchers("/users/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET).hasAnyAuthority("ROLE_STAFF")
+
+                        // ADMIN và STAFF có thể thêm và sửa product, nhưng chỉ ADMIN có thể xóa
+                        .requestMatchers(HttpMethod.POST, "/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF")
+                        .requestMatchers(HttpMethod.PUT, "/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/products/**").hasAnyAuthority("ROLE_ADMIN")
+
+                        // CUSTOMER chỉ có thể xem sản phẩm
+                        .requestMatchers(HttpMethod.GET, "/products/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_STAFF", "ROLE_CUSTOMER")
+
+                        // Tất cả các yêu cầu khác cần được xác thực
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider()).addFilterBefore(filterSecurity, UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(filterSecurity, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
-
     }
+
+
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
